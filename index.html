@@ -1,87 +1,64 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Laggers Tierlist</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.4/tabletop.min.js"></script>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f9fafb;
-      padding: 40px 20px;
-    }
-
-    h1 {
-      text-align: center;
-      color: #1f2937;
-      margin-bottom: 10px;
-    }
-
-    #buscador-container {
-      text-align: center;
-      margin-bottom: 25px;
-    }
-
-    #buscador {
-      padding: 8px 16px;
-      width: 250px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-
-    table {
-      width: 95%;
-      max-width: 1200px;
-      margin: auto;
-      border-collapse: collapse;
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    }
-
-    th, td {
-      padding: 12px;
-      border: 1px solid #e5e7eb;
-      text-align: center;
-      font-size: 14px;
-    }
-
-    th {
-      background: #111827;
-      color: #ffffff;
-      font-weight: 600;
-    }
-
-    tr:nth-child(even) {
-      background: #f3f4f6;
-    }
-
-    tr:hover {
-      background: #e5e7eb;
-    }
-
-    /* Estilos por tier */
-    .HT1 { color: #d97706; font-weight: bold; }
-    .HT2 { color: #f59e0b; font-weight: bold; }
-    .HT3 { color: #fbbf24; }
-    .HT4 { color: #fde68a; }
-
-    .LT1 { color: #10b981; font-weight: bold; }
-    .LT2 { color: #34d399; font-weight: bold; }
-    .LT3 { color: #6ee7b7; }
-    .LT4 { color: #a7f3d0; }
-    .LT5 { color: #d1fae5; }
-
-    .None { color: #9ca3af; font-style: italic; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Laggers Tierlist</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background: #f9f9f9;
+  }
+  h1 {
+    text-align: center;
+  }
+  input[type="search"] {
+    display: block;
+    margin: 10px auto 20px;
+    padding: 8px 12px;
+    width: 300px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 1100px;
+    margin: auto;
+    background: white;
+    box-shadow: 0 0 8px rgb(0 0 0 / 0.1);
+  }
+  th, td {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    text-align: center;
+    font-weight: normal;
+  }
+  th {
+    background: #004d99;
+    color: white;
+    font-weight: bold;
+  }
+  tbody tr:hover {
+    background: #e6f0ff;
+  }
+  /* Colores para tiers */
+  .HT1 { background-color: #003366; color: white; }
+  .HT2 { background-color: #004c99; color: white; }
+  .HT3 { background-color: #3366cc; color: white; }
+  .HT4 { background-color: #6699ff; color: black; }
+  .LT1 { background-color: #660000; color: white; }
+  .LT2 { background-color: #993333; color: white; }
+  .LT3 { background-color: #cc6666; color: black; }
+  .LT4 { background-color: #ff9999; color: black; }
+</style>
 </head>
 <body>
   <h1>Laggers Tierlist</h1>
-  <div id="buscador-container">
-    <input type="text" id="buscador" placeholder="Buscar jugador..." onkeyup="filtrarTabla()" />
-  </div>
+  <input type="search" id="search" placeholder="Buscar jugador..." />
+
   <table id="tabla-datos">
     <thead>
       <tr>
@@ -97,62 +74,48 @@
         <th>Total</th>
       </tr>
     </thead>
-    <tbody></tbody>
+    <tbody>
+      <!-- Aquí van los datos -->
+    </tbody>
   </table>
 
-  <script>
-    function obtenerClaseTier(valor) {
-      if (!valor || valor === "-") return 'None';
-      const tier = valor.trim().toUpperCase();
-      const clases = ["HT1", "HT2", "HT3", "HT4", "LT1", "LT2", "LT3", "LT4", "LT5"];
-      return clases.includes(tier) ? tier : 'None';
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.4/tabletop.min.js"></script>
+<script>
+  const googleSheetKey = '17MGt__hyDYBsM8QIZS8D2pBCDEPWOCZ0LPFQhlBKcdI';
+  const sheetName = 'Tierlist';
+
+  function obtenerClaseTier(tier) {
+    if(!tier) return '';
+    tier = tier.toString().trim().toUpperCase();
+    if(['HT1','HT2','HT3','HT4','LT1','LT2','LT3','LT4'].includes(tier)) {
+      return tier;
     }
+    return '';
+  }
 
-    function filtrarTabla() {
-      const input = document.getElementById("buscador").value.toLowerCase();
-      const filas = document.querySelectorAll("#tabla-datos tbody tr");
+  function renderTable(data) {
+    let html = '';
+    let count = 0;
+    for(let i = 1; i < data.length && count < 20; i++) {
+      const fila = data[i];
+      if(!fila) continue;
+      const jugador = fila[1] || '';
+      if(!jugador) continue;
 
-      let contador = 0;
-      filas.forEach(fila => {
-        const jugador = fila.children[0].textContent.toLowerCase();
-        const coincide = jugador.includes(input);
+      const sword = fila[2] || '';
+      const axe = fila[3] || '';
+      const crystal = fila[4] || '';
+      const netheritePot = fila[5] || '';
+      const diamondPot = fila[6] || '';
+      const uhc = fila[7] || '';
+      const smp = fila[8] || '';
+      const mace = fila[9] || '';
+      const total = fila[10] || '';
 
-        if (coincide && contador < 20) {
-          fila.style.display = "";
-          contador++;
-        } else {
-          fila.style.display = "none";
-        }
-      });
-    }
+      html += `
+        <tr>
+          <td>${jugador}</td>
+          <td class="${obtenerClaseTier(sword)}">${sword}</td>
+          <td class="${obtenerClaseTier(axe)}">${axe}</td>
+          <td class="${obtenerClaseTier(crystal)}">${cryst
 
-    window.onload = function () {
-      Tabletop.init({
-        key: '17MGt__hyDYBsM8QIZS8D2pBCDEPWOCZ0LPFQhlBKcdI',
-        simpleSheet: true,
-        callback: function (data) {
-          const tabla = document.querySelector('#tabla-datos tbody');
-          const top20 = data.slice(0, 20); // Solo los primeros 20
-          top20.forEach(row => {
-            const fila = `
-              <tr>
-                <td>${row.Jugador}</td>
-                <td class="${obtenerClaseTier(row.Sword)}">${row.Sword}</td>
-                <td class="${obtenerClaseTier(row.Axe)}">${row.Axe}</td>
-                <td class="${obtenerClaseTier(row.Crystal)}">${row.Crystal}</td>
-                <td class="${obtenerClaseTier(row["Netherite Pot"])}">${row["Netherite Pot"]}</td>
-                <td class="${obtenerClaseTier(row["Diamond Pot"])}">${row["Diamond Pot"]}</td>
-                <td class="${obtenerClaseTier(row.UHC)}">${row.UHC}</td>
-                <td class="${obtenerClaseTier(row.SMP)}">${row.SMP}</td>
-                <td class="${obtenerClaseTier(row.Mace)}">${row.Mace}</td>
-                <td>${row.Total}</td>
-              </tr>
-            `;
-            tabla.innerHTML += fila;
-          });
-        }
-      });
-    };
-  </script>
-</body>
-</html>
