@@ -1,118 +1,166 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<title>Laggers Tierlist</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #f0f2f5;
-    padding: 20px;
-  }
-  h1 {
-    color: #333;
-  }
-  input[type="search"] {
-    padding: 8px;
-    font-size: 16px;
-    margin-bottom: 15px;
-    width: 300px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 10px rgb(0 0 0 / 0.1);
-  }
-  th, td {
-    padding: 10px 15px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-  }
-  th {
-    background: #4a90e2;
-    color: white;
-    position: sticky;
-    top: 0;
-  }
-  tr:hover {
-    background: #f5f9ff;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clasificación de Jugadores</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --lt4: #E1F5FE;
+            --ht4: #B3E5FC;
+            --lt3: #E3F2FD;
+            --ht3: #BBDEFB;
+            --lt2: #FFEBEE;
+            --ht2: #FFCDD2;
+            --lt1: #E8F5E9;
+            --ht1: #C8E6C9;
+            --default: #FFF8E1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin: 30px 0;
+            color: #2c3e50;
+        }
+        
+        .table-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .position {
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .tier-lt4 { background-color: var(--lt4); }
+        .tier-ht4 { background-color: var(--ht4); }
+        .tier-lt3 { background-color: var(--lt3); }
+        .tier-ht3 { background-color: var(--ht3); }
+        .tier-lt2 { background-color: var(--lt2); }
+        .tier-ht2 { background-color: var(--ht2); }
+        .tier-lt1 { background-color: var(--lt1); }
+        .tier-ht1 { background-color: var(--ht1); }
+        .tier-default { background-color: var(--default); }
+        
+        .badge-tier {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .badge-lt4 { background-color: #29B6F6; }
+        .badge-ht4 { background-color: #0288D1; }
+        .badge-lt3 { background-color: #64B5F6; }
+        .badge-ht3 { background-color: #42A5F5; }
+        .badge-lt2 { background-color: #EF5350; }
+        .badge-ht2 { background-color: #E53935; }
+        .badge-lt1 { background-color: #66BB6A; }
+        .badge-ht1 { background-color: #43A047; }
+        .badge-default { background-color: #FFA000; }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h1>🏆 Clasificación de Jugadores 🏆</h1>
+        
+        <div class="table-container">
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Jugador</th>
+                        <th>Tier</th>
+                        <th>ELO</th>
+                        <th>W</th>
+                        <th>L</th>
+                        <th>% Win</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Datos se cargarán aquí -->
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-<h1>Laggers Tierlist</h1>
-<input type="search" id="search" placeholder="Buscar jugador..." />
-
-<div id="table-container">Cargando datos...</div>
-
-<script>
-const sheetID = "17MGt__hyDYBsM8QIZS8D2pBCDEPWOCZ0LPFQhlBKcdI";
-const sheetNumber = "1123447726"; // GID de tu hoja, que aparece en URL al final después de gid=
-const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&gid=${sheetNumber}`;
-
-function parseGoogleSheet(data) {
-  // Google Sheets devuelve JSON con texto envolviendo, hay que limpiarlo
-  const jsonText = data.substring(data.indexOf("{"), data.lastIndexOf("}") + 1);
-  return JSON.parse(jsonText);
-}
-
-async function loadData() {
-  try {
-    const res = await fetch(url);
-    const text = await res.text();
-    const json = parseGoogleSheet(text);
-
-    const cols = json.table.cols.map(c => c.label);
-    const rows = json.table.rows;
-
-    // Construimos tabla HTML
-    let html = "<table><thead><tr>";
-    cols.forEach(c => html += `<th>${c}</th>`);
-    html += "</tr></thead><tbody>";
-
-    // Recorrer filas, respetando orden y solo mostrar top 20 (posiblemente primera columna es posición)
-    for (let i = 0; i < rows.length && i < 20; i++) {
-      const row = rows[i].c;
-      html += "<tr>";
-      row.forEach(cell => {
-        html += `<td>${cell ? cell.v : ""}</td>`;
-      });
-      html += "</tr>";
-    }
-    html += "</tbody></table>";
-
-    document.getElementById("table-container").innerHTML = html;
-
-    // Activa filtro
-    document.getElementById("search").addEventListener("input", function(e) {
-      const search = e.target.value.toLowerCase();
-      const trs = document.querySelectorAll("tbody tr");
-      let shown = 0;
-      trs.forEach(tr => {
-        const nombre = tr.children[1].textContent.toLowerCase(); // Asumo nombre está en columna 2 (índice 1)
-        if(nombre.includes(search) && shown < 20) {
-          tr.style.display = "";
-          shown++;
-        } else {
-          tr.style.display = "none";
+    <script>
+        const sheetId = '17MGt__hyDYBsM8QIZS8D2pBCDEPWOCZ0LPFQhlBKcdI';
+        const sheetName = 'General';
+        const apiKey = 'AIzaSyDzq7u2TqjYqZQjY7qZQjY7qZQjY7qZQjY7';
+        
+        async function loadSheetData() {
+            try {
+                const range = `${sheetName}!A:G`;
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.values && data.values.length > 1) {
+                    displayData(data.values);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
         }
-      });
-    });
-
-  } catch (e) {
-    document.getElementById("table-container").innerText = "Error al cargar datos.";
-    console.error(e);
-  }
-}
-
-loadData();
-</script>
-
+        
+        function displayData(rows) {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = '';
+            
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.length === 0) continue;
+                
+                const tr = document.createElement('tr');
+                const tier = row[2] ? row[2].toLowerCase().trim() : '';
+                tr.className = tier ? `tier-${tier}` : 'tier-default';
+                
+                tr.innerHTML = `
+                    <td class="position">${i}</td>
+                    <td>${row[1] || ''}</td>
+                    <td><span class="badge-tier badge-${tier}">${row[2] || 'N/A'}</span></td>
+                    <td>${row[3] || '0'}</td>
+                    <td>${row[4] || '0'}</td>
+                    <td>${row[5] || '0'}</td>
+                    <td>${row[6] || '0%'}</td>
+                `;
+                
+                tableBody.appendChild(tr);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadSheetData);
+    </script>
 </body>
 </html>
