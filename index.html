@@ -2,120 +2,117 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Laggers Tierlist</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #f9f9f9;
+    background: #f0f2f5;
+    padding: 20px;
   }
   h1 {
-    text-align: center;
+    color: #333;
   }
   input[type="search"] {
-    display: block;
-    margin: 10px auto 20px;
-    padding: 8px 12px;
-    width: 300px;
+    padding: 8px;
     font-size: 16px;
-    border-radius: 5px;
+    margin-bottom: 15px;
+    width: 300px;
     border: 1px solid #ccc;
+    border-radius: 5px;
   }
   table {
     border-collapse: collapse;
     width: 100%;
-    max-width: 1100px;
-    margin: auto;
     background: white;
-    box-shadow: 0 0 8px rgb(0 0 0 / 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgb(0 0 0 / 0.1);
   }
   th, td {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    text-align: center;
-    font-weight: normal;
+    padding: 10px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
   }
   th {
-    background: #004d99;
+    background: #4a90e2;
     color: white;
-    font-weight: bold;
+    position: sticky;
+    top: 0;
   }
-  tbody tr:hover {
-    background: #e6f0ff;
+  tr:hover {
+    background: #f5f9ff;
   }
-  /* Colores para tiers */
-  .HT1 { background-color: #003366; color: white; }
-  .HT2 { background-color: #004c99; color: white; }
-  .HT3 { background-color: #3366cc; color: white; }
-  .HT4 { background-color: #6699ff; color: black; }
-  .LT1 { background-color: #660000; color: white; }
-  .LT2 { background-color: #993333; color: white; }
-  .LT3 { background-color: #cc6666; color: black; }
-  .LT4 { background-color: #ff9999; color: black; }
 </style>
 </head>
 <body>
-  <h1>Laggers Tierlist</h1>
-  <input type="search" id="search" placeholder="Buscar jugador..." />
 
-  <table id="tabla-datos">
-    <thead>
-      <tr>
-        <th>Jugador</th>
-        <th>Sword</th>
-        <th>Axe</th>
-        <th>Crystal</th>
-        <th>Netherite Pot</th>
-        <th>Diamond Pot</th>
-        <th>UHC</th>
-        <th>SMP</th>
-        <th>Mace</th>
-        <th>Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Aquí van los datos -->
-    </tbody>
-  </table>
+<h1>Laggers Tierlist</h1>
+<input type="search" id="search" placeholder="Buscar jugador..." />
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.4/tabletop.min.js"></script>
+<div id="table-container">Cargando datos...</div>
+
 <script>
-  const googleSheetKey = '17MGt__hyDYBsM8QIZS8D2pBCDEPWOCZ0LPFQhlBKcdI';
-  const sheetName = 'Tierlist';
+const sheetID = "17MGt__hyDYBsM8QIZS8D2pBCDEPWOCZ0LPFQhlBKcdI";
+const sheetNumber = "1123447726"; // GID de tu hoja, que aparece en URL al final después de gid=
+const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&gid=${sheetNumber}`;
 
-  function obtenerClaseTier(tier) {
-    if(!tier) return '';
-    tier = tier.toString().trim().toUpperCase();
-    if(['HT1','HT2','HT3','HT4','LT1','LT2','LT3','LT4'].includes(tier)) {
-      return tier;
+function parseGoogleSheet(data) {
+  // Google Sheets devuelve JSON con texto envolviendo, hay que limpiarlo
+  const jsonText = data.substring(data.indexOf("{"), data.lastIndexOf("}") + 1);
+  return JSON.parse(jsonText);
+}
+
+async function loadData() {
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    const json = parseGoogleSheet(text);
+
+    const cols = json.table.cols.map(c => c.label);
+    const rows = json.table.rows;
+
+    // Construimos tabla HTML
+    let html = "<table><thead><tr>";
+    cols.forEach(c => html += `<th>${c}</th>`);
+    html += "</tr></thead><tbody>";
+
+    // Recorrer filas, respetando orden y solo mostrar top 20 (posiblemente primera columna es posición)
+    for (let i = 0; i < rows.length && i < 20; i++) {
+      const row = rows[i].c;
+      html += "<tr>";
+      row.forEach(cell => {
+        html += `<td>${cell ? cell.v : ""}</td>`;
+      });
+      html += "</tr>";
     }
-    return '';
+    html += "</tbody></table>";
+
+    document.getElementById("table-container").innerHTML = html;
+
+    // Activa filtro
+    document.getElementById("search").addEventListener("input", function(e) {
+      const search = e.target.value.toLowerCase();
+      const trs = document.querySelectorAll("tbody tr");
+      let shown = 0;
+      trs.forEach(tr => {
+        const nombre = tr.children[1].textContent.toLowerCase(); // Asumo nombre está en columna 2 (índice 1)
+        if(nombre.includes(search) && shown < 20) {
+          tr.style.display = "";
+          shown++;
+        } else {
+          tr.style.display = "none";
+        }
+      });
+    });
+
+  } catch (e) {
+    document.getElementById("table-container").innerText = "Error al cargar datos.";
+    console.error(e);
   }
+}
 
-  function renderTable(data) {
-    let html = '';
-    let count = 0;
-    for(let i = 1; i < data.length && count < 20; i++) {
-      const fila = data[i];
-      if(!fila) continue;
-      const jugador = fila[1] || '';
-      if(!jugador) continue;
+loadData();
+</script>
 
-      const sword = fila[2] || '';
-      const axe = fila[3] || '';
-      const crystal = fila[4] || '';
-      const netheritePot = fila[5] || '';
-      const diamondPot = fila[6] || '';
-      const uhc = fila[7] || '';
-      const smp = fila[8] || '';
-      const mace = fila[9] || '';
-      const total = fila[10] || '';
-
-      html += `
-        <tr>
-          <td>${jugador}</td>
-          <td class="${obtenerClaseTier(sword)}">${sword}</td>
-          <td class="${obtenerClaseTier(axe)}">${axe}</td>
-          <td class="${obtenerClaseTier(crystal)}">${cryst
-
+</body>
+</html>
